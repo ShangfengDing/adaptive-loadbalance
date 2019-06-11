@@ -8,6 +8,7 @@ import org.apache.dubbo.rpc.cluster.LoadBalance;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author daofeng.xjf
@@ -19,8 +20,21 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class UserLoadBalance implements LoadBalance {
 
+    private static AtomicInteger count = new AtomicInteger(0);
+
     @Override
     public <T> Invoker<T> select(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
-        return invokers.get(ThreadLocalRandom.current().nextInt(invokers.size()));
+        int typeCount = count.getAndAdd(1);
+        typeCount%=6;
+        switch (typeCount){
+            case 0:
+                return invokers.get(0);
+            case 1:
+            case 2:
+                return invokers.get(1);
+            default:
+                return invokers.get(2);
+        }
+//        return invokers.get(ThreadLocalRandom.current().nextInt(invokers.size()));
     }
 }
