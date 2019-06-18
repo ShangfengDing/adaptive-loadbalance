@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * 此类可以修改实现，不可以移动类或者修改包名
  * 选手需要基于此类实现自己的负载均衡算法
  */
-public class UserLoadBalance extends AbstractLoadBalance implements LoadBalance {
+public class UserLoadBalance implements LoadBalance {
 
     private static AtomicInteger count = new AtomicInteger(0);
 
