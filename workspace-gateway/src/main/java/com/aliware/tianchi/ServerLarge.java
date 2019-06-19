@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerLarge extends Server{
 
-    private static ServerLarge instance = new ServerLarge( new AtomicInteger(300));
+    private static ServerLarge instance = new ServerLarge( new AtomicInteger(600));
     private ServerLarge(){}
     private ServerLarge(AtomicInteger weight){
         this.weight = weight;
