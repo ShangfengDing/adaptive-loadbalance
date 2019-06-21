@@ -1,5 +1,6 @@
 package com.aliware.tianchi;
 
+import com.aliware.tianchi.base.ServersStatus;
 import org.apache.dubbo.common.Constants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.rpc.Filter;
@@ -20,6 +21,8 @@ public class TestClientFilter implements Filter {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         try{
+            ServersStatus.startRequest(invoker.getUrl().toIdentityString());
+            invocation.getAttachments().put("startTime",String.valueOf(System.currentTimeMillis()));
             Result result = invoker.invoke(invocation);
             return result;
         }catch (Exception e){
@@ -30,6 +33,15 @@ public class TestClientFilter implements Filter {
 
     @Override
     public Result onResponse(Result result, Invoker<?> invoker, Invocation invocation) {
+        boolean ifSuccess;
+        if (result.hasException()||result.getValue() == null||result.getValue().equals("")){
+            ifSuccess=false;
+        }else {
+            ifSuccess=true;
+        }
+        Long lastTime = System.currentTimeMillis()-Long.parseLong(invocation.getAttachments().get("startTime"));
+        ServersStatus.endRequest(invoker.getUrl().toIdentityString(),ifSuccess,lastTime);
         return result;
     }
+
 }

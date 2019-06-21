@@ -7,7 +7,10 @@ import org.apache.dubbo.rpc.RpcException;
 import org.apache.dubbo.rpc.cluster.LoadBalance;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class UserLoadBalance implements LoadBalance {
 
-    private static AtomicInteger count = new AtomicInteger(0);
     private static int largeWeight = 300;
     private static int mediumWeight = 200;
     private static int smallWeight = 100;
@@ -28,6 +30,8 @@ public class UserLoadBalance implements LoadBalance {
     ServerLarge serverLarge = ServerLarge.getInstance();
     ServerMedium serverMedium = ServerMedium.getInstance();
     ServerSmall serverSmall = ServerSmall.getInstance();
+
+    private static ConcurrentMap servers = null;
 
 
     //    @Override
@@ -44,31 +48,43 @@ public class UserLoadBalance implements LoadBalance {
 //            case 2:
 //                return invokers.get(1);
 //            default:
-//                return invokers.get(2);
+//                return invok
+//                ers.get(2);
 //        }
 ////        return invokers.get(ThreadLocalRandom.current().nextInt(invokers.size()));
 //    }
     @Override
     public <T> Invoker<T> select(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
-        int totalWeight = serverLarge.getWeight()+serverMedium.getWeight()+serverSmall.getWeight();
+        if (servers == null) {
+            synchronized (servers) {
+                if (servers.size() == 0) {
+                    servers = new ConcurrentHashMap();
+                    int temp = 0;
+                    for (Invoker invoker : invokers) {
+                        servers.put(invoker.getUrl().toIdentityString(), temp);
+                        temp++;
+                    }
+                }
+            }
+        }
+        int totalWeight = serverLarge.getWeight() + serverMedium.getWeight() + serverSmall.getWeight();
         System.out.println(totalWeight);
         Server max;
         int largeWeight = serverLarge.getWeight();
         int mediumWeight = serverMedium.getWeight();
         int smallWeight = serverSmall.getWeight();
-        if(largeWeight>mediumWeight){
+        if (largeWeight > mediumWeight) {
             max = serverLarge;
         } else {
             max = serverMedium;
         }
-        if(largeWeight<smallWeight){
+        if (largeWeight < smallWeight) {
             max = serverSmall;
         }
-
-        max.setWeight(max.getWeight()-totalWeight);
-        serverSmall.setWeight(serverSmall.getWeight()+serverSmall.getInitialWeight());
-        serverMedium.setWeight(serverMedium.getWeight()+serverMedium.getInitialWeight());
-        serverLarge.setWeight(serverLarge.getWeight()+serverLarge.getInitialWeight());
+        max.setWeight(max.getWeight() - totalWeight);
+        serverSmall.setWeight(serverSmall.getWeight() + serverSmall.getInitialWeight());
+        serverMedium.setWeight(serverMedium.getWeight() + serverMedium.getInitialWeight());
+        serverLarge.setWeight(serverLarge.getWeight() + serverLarge.getInitialWeight());
         System.out.println(max.index);
         return invokers.get(max.getIndex());
 
