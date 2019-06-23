@@ -4,18 +4,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ServerSmall extends Server{
 
-    private final int index = 0;
-    private int initialWeight = 100;
-    private static ServerSmall instance = new ServerSmall();
+    private static ServerSmall instance = new ServerSmall(new AtomicInteger(200));
     private ServerSmall(){}
     private ServerSmall(AtomicInteger weight){
         this.weight = weight;
+        this.initialWeight = weight.get();
+        this.index = 0;
     }
 
     public static ServerSmall getInstance(){
         return instance;
     }
 
-    private AtomicInteger weight = new AtomicInteger(100);
 
 }
