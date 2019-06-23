@@ -9,10 +9,10 @@ public class Server {
     public int pending = 0;
     public int error = 0;
     public Long tt = 0L;//延迟总时间，除以成功数是每个成功的延迟时间
-    private String url = "";
-    private int index;//应该不用了
+    public String url = "";
+    public int index;//应该不用了
     public int weight=0;//改为动态生成
-    private int initialWeight;//应该就不用了
+    public int initialWeight;//应该就不用了
 
     public double generateWeight() {
         double errorRate = (1 + success) / (double) (1 + error);

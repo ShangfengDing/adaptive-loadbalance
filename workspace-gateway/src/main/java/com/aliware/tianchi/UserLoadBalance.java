@@ -29,10 +29,6 @@ public class UserLoadBalance implements LoadBalance {
     private static int mediumWeight = 200;
     private static int smallWeight = 100;
 
-    ServerLarge serverLarge = ServerLarge.getInstance();
-    ServerMedium serverMedium = ServerMedium.getInstance();
-    ServerSmall serverSmall = ServerSmall.getInstance();
-
     public static ConcurrentMap<String ,Server> servers = new ConcurrentHashMap();
 
 
