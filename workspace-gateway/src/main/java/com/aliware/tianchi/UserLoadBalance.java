@@ -1,5 +1,6 @@
 package com.aliware.tianchi;
 
+import com.aliware.tianchi.base.ServersStatus;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -31,7 +33,7 @@ public class UserLoadBalance implements LoadBalance {
     ServerMedium serverMedium = ServerMedium.getInstance();
     ServerSmall serverSmall = ServerSmall.getInstance();
 
-    private static ConcurrentMap servers = null;
+    public static ConcurrentMap<String ,Server> servers = new ConcurrentHashMap();
 
 
     //    @Override
@@ -55,38 +57,64 @@ public class UserLoadBalance implements LoadBalance {
 //    }
     @Override
     public <T> Invoker<T> select(List<Invoker<T>> invokers, URL url, Invocation invocation) throws RpcException {
-        if (servers == null) {
+        if (invokers==null||invokers.isEmpty()){
+            return null;
+        }
+        if (invokers.size()==1){
+            return invokers.get(0);
+        }
+        if (servers.size()==0) {
             synchronized (servers) {
                 if (servers.size() == 0) {
                     servers = new ConcurrentHashMap();
-                    int temp = 0;
+                    int count = 0;
                     for (Invoker invoker : invokers) {
+                        Server temp =new Server();
+                        temp.setIndex(count);
                         servers.put(invoker.getUrl().toIdentityString(), temp);
-                        temp++;
+                        count++;
                     }
                 }
             }
         }
-        int totalWeight = serverLarge.getWeight() + serverMedium.getWeight() + serverSmall.getWeight();
-        System.out.println(totalWeight);
-        Server max;
-        int largeWeight = serverLarge.getWeight();
-        int mediumWeight = serverMedium.getWeight();
-        int smallWeight = serverSmall.getWeight();
-        if (largeWeight > mediumWeight) {
-            max = serverLarge;
-        } else {
-            max = serverMedium;
+        double max = 0;
+        int index = -1;
+        for (int i=0;i<invokers.size();i++){
+            Server server = servers.get(invokers.get(i).getUrl().toIdentityString());
+            double weight = server.generateWeight();
+            if(weight>max){
+                max=weight;
+                index=server.getIndex();
+            }
+            if (weight==0) {
+                index=-1;
+                break;
+            }
         }
-        if (largeWeight < smallWeight) {
-            max = serverSmall;
+        if (index==-1){
+            index = ThreadLocalRandom.current().nextInt(invokers.size());
         }
-        max.setWeight(max.getWeight() - totalWeight);
-        serverSmall.setWeight(serverSmall.getWeight() + serverSmall.getInitialWeight());
-        serverMedium.setWeight(serverMedium.getWeight() + serverMedium.getInitialWeight());
-        serverLarge.setWeight(serverLarge.getWeight() + serverLarge.getInitialWeight());
-        System.out.println(max.index);
-        return invokers.get(max.getIndex());
+        return invokers.get(index);
+//        int totalWeight = serverLarge.getWeight() + serverMedium.getWeight() + serverSmall.getWeight();
+//        System.out.println(totalWeight);
+//        Server max;
+//        int largeWeight = serverLarge.getWeight();
+//        int mediumWeight = serverMedium.getWeight();
+//        int smallWeight = serverSmall.getWeight();
+//        if (largeWeight > mediumWeight) {
+//            max = serverLarge;
+//        } else {
+//            max = serverMedium;
+//        }
+//        if (largeWeight < smallWeight) {
+//            max = serverSmall;
+//        }
+//        max.setWeight(max.getWeight() - totalWeight);
+//        serverSmall.setWeight(serverSmall.getWeight() + serverSmall.getInitialWeight());
+//        serverMedium.setWeight(serverMedium.getWeight() + serverMedium.getInitialWeight());
+//        serverLarge.setWeight(serverLarge.getWeight() + serverLarge.getInitialWeight());
+//        System.out.println(max.index);
+//        return invokers.get(max.getIndex());
 
     }
 
