@@ -84,7 +84,7 @@ public class UserLoadBalance implements LoadBalance {
             double weight = server.generateWeight();
             if(weight>max){
                 max=weight;
-                index=server.getIndex();
+                index=server.getIndex();;
             }
             if (weight==0) {
                 index=-1;
